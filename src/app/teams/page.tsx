@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { prisma } from "@/lib/db";
+import { getPrisma } from "@/lib/db";
 import { getOrCreateLocalUser } from "@/lib/localUser";
 import TeamForm from "@/components/TeamForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function TeamsPage() {
+  const prisma = getPrisma();
   const user = await getOrCreateLocalUser();
   const teams = await prisma.team.findMany({
     where: { ownerId: user.id },

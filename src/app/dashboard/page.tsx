@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { prisma } from "@/lib/db";
+import { getPrisma } from "@/lib/db";
 import { getOrCreateLocalUser } from "@/lib/localUser";
 import { summarizeEvents, spikeMetrics, serveMetrics, receptionMetrics } from "@/lib/stats";
 
@@ -10,6 +10,7 @@ export default async function DashboardPage({
 }: {
   searchParams: { teamId?: string };
 }) {
+  const prisma = getPrisma();
   const user = await getOrCreateLocalUser();
   const teams = await prisma.team.findMany({ where: { ownerId: user.id } });
   const activeTeamId = searchParams.teamId ?? teams[0]?.id;

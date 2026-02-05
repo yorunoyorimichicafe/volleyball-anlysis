@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { getPrisma } from "@/lib/db";
 import { videoSchema } from "@/lib/validators";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const prisma = getPrisma();
   const body = await request.json();
   const parsed = videoSchema.safeParse(body);
   if (!parsed.success) {

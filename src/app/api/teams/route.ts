@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { getPrisma } from "@/lib/db";
 import { getOrCreateLocalUser } from "@/lib/localUser";
 import { teamSchema } from "@/lib/validators";
 
@@ -7,6 +7,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const prisma = getPrisma();
   const user = await getOrCreateLocalUser();
   const teams = await prisma.team.findMany({
     where: { ownerId: user.id },
@@ -16,6 +17,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const prisma = getPrisma();
   const body = await request.json();
   const parsed = teamSchema.safeParse(body);
   if (!parsed.success) {

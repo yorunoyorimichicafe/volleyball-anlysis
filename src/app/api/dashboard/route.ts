@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { getPrisma } from "@/lib/db";
 import { summarizeEvents } from "@/lib/stats";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  const prisma = getPrisma();
   const { searchParams } = new URL(request.url);
   const teamId = searchParams.get("teamId");
   if (!teamId) {

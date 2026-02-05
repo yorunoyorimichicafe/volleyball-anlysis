@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { getPrisma } from "@/lib/db";
 import { eventSchema } from "@/lib/validators";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  const prisma = getPrisma();
   const { searchParams } = new URL(request.url);
   const videoId = searchParams.get("videoId");
   if (!videoId) {
@@ -21,6 +22,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const prisma = getPrisma();
   const body = await request.json();
   const parsed = eventSchema.safeParse(body);
   if (!parsed.success) {

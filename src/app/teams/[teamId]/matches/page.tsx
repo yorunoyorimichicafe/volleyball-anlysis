@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { prisma } from "@/lib/db";
+import { getPrisma } from "@/lib/db";
 import MatchForm from "@/components/MatchForm";
 import PlayerForm from "@/components/PlayerForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function TeamMatchesPage({ params }: { params: { teamId: string } }) {
+  const prisma = getPrisma();
   const team = await prisma.team.findUnique({
     where: { id: params.teamId },
     include: {

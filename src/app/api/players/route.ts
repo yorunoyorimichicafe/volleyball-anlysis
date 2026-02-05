@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { getPrisma } from "@/lib/db";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -13,6 +13,7 @@ const playerSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const prisma = getPrisma();
   const body = await request.json();
   const parsed = playerSchema.safeParse(body);
   if (!parsed.success) {
