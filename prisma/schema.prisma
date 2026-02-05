@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum EventType {
+  SPIKE
+  SERVE
+  RECEPTION
+}
+
+enum EventOutcome {
+  POINT
+  IN_PLAY
+  ERROR
+  BLOCKED
+  ACE
+  MISS
+  SUCCESS_A
+  SUCCESS_B
+  SUCCESS_C
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String?  @unique
+  name      String?
+  createdAt DateTime @default(now())
+  teams     Team[]
+}
+
+model Team {
+  id        String   @id @default(cuid())
+  name      String
+  ownerId   String
+  createdAt DateTime @default(now())
+
+  owner   User    @relation(fields: [ownerId], references: [id])
+  players Player[]
+  matches Match[]
+  events  Event[]
+
+  @@index([ownerId])
+}
+
+model Player {
+  id        String   @id @default(cuid())
+  teamId    String
+  name      String
+  number    Int?
+  position  String?
+  createdAt DateTime @default(now())
+
+  team   Team   @relation(fields: [teamId], references: [id])
+  events Event[]
+
+  @@index([teamId])
+}
+
+model Match {
+  id        String   @id @default(cuid())
+  teamId    String
+  title     String
+  opponent  String?
+  playedAt  DateTime
+  memo      String?
+  createdAt DateTime @default(now())
+
+  team   Team    @relation(fields: [teamId], references: [id])
+  videos Video[]
+  events Event[]
+
+  @@index([teamId])
+  @@index([playedAt])
+}
+
+model Video {
+  id          String   @id @default(cuid())
+  matchId     String
+  storageUrl  String
+  durationSec Int
+  uploadedAt  DateTime @default(now())
+
+  match  Match  @relation(fields: [matchId], references: [id])
+  events Event[]
+
+  @@index([matchId])
+}
+
+model Event {
+  id           String       @id @default(cuid())
+  teamId       String
+  matchId      String
+  videoId      String
+  type         EventType
+  outcome      EventOutcome
+  playerId     String?
+  rotation     Int?
+  zone         Int?
+  videoTimeSec Int
+  confidence   Float?
+  metadata     Json?
+  createdAt    DateTime     @default(now())
+
+  team   Team   @relation(fields: [teamId], references: [id])
+  match  Match  @relation(fields: [matchId], references: [id])
+  video  Video  @relation(fields: [videoId], references: [id])
+  player Player? @relation(fields: [playerId], references: [id])
+
+  @@index([teamId])
+  @@index([matchId])
+  @@index([videoId])
+  @@index([playerId])
+  @@index([type])
+}
