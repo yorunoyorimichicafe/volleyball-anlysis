@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 const playerSchema = z.object({
   teamId: z.string().min(1),
   name: z.string().min(1),

@@ -3,6 +3,9 @@ import { prisma } from "@/lib/db";
 import { getOrCreateLocalUser } from "@/lib/localUser";
 import { teamSchema } from "@/lib/validators";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const user = await getOrCreateLocalUser();
   const teams = await prisma.team.findMany({
