@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { summarizeEvents, spikeMetrics, serveMetrics, receptionMetrics } from "@/lib/stats";
 import VideoUploadForm from "@/components/VideoUploadForm";
 
+export const dynamic = "force-dynamic";
+
 export default async function MatchPage({ params }: { params: { matchId: string } }) {
   const match = await prisma.match.findUnique({
     where: { id: params.matchId },

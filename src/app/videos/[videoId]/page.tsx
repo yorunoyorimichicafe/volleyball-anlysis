@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/db";
 import VideoTagger from "@/components/VideoTagger";
 
+export const dynamic = "force-dynamic";
+
 export default async function VideoPage({ params }: { params: { videoId: string } }) {
   const video = await prisma.video.findUnique({
     where: { id: params.videoId },
