@@ -15,7 +15,7 @@ export const matchSchema = z.object({
 export const videoSchema = z.object({
   matchId: z.string().min(1),
   storageUrl: z.string().min(1),
-  durationSec: z.number().int().positive()
+  durationSec: z.number().int().min(0)
 });
 
 export const eventSchema = z.object({
