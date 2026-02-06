@@ -44,11 +44,14 @@ npm run dev
 ```
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/volley_stats"
 DIRECT_URL="postgresql://USER:PASSWORD@localhost:5432/volley_stats"
+SUPABASE_URL="https://YOUR_PROJECT.supabase.co"
+SUPABASE_SERVICE_ROLE_KEY="YOUR_SERVICE_ROLE_KEY"
+SUPABASE_STORAGE_BUCKET="videos"
 ```
 
 ## デプロイ想定
 - DB: PostgreSQL
-- ファイル保存: Phase0は`public/uploads`へのローカル保存。将来的にS3互換へ差し替え可能。
+- ファイル保存: 本番はSupabase Storage（`SUPABASE_*`を設定）/ローカルは`public/uploads`。
 - APIはRoute Handlersで実装。後段にAIワーカーを差し込む想定。
 
 ## タグ付けショートカット

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPrisma } from "@/lib/db";
+import { uploadToSupabaseStorage } from "@/lib/storage";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 
@@ -26,14 +27,19 @@ export async function POST(request: Request) {
 
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
-  const uploadsDir = path.join(process.cwd(), "public", "uploads");
-  await mkdir(uploadsDir, { recursive: true });
+  let storageUrl = "";
+  const supabaseResult = await uploadToSupabaseStorage(file.name, buffer);
+  if (supabaseResult) {
+    storageUrl = supabaseResult.storageUrl;
+  } else {
+    const uploadsDir = path.join(process.cwd(), "public", "uploads");
+    await mkdir(uploadsDir, { recursive: true });
 
-  const safeName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_")}`;
-  const filePath = path.join(uploadsDir, safeName);
-  await writeFile(filePath, buffer);
-
-  const storageUrl = `/uploads/${safeName}`;
+    const safeName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\\-_]/g, "_")}`;
+    const filePath = path.join(uploadsDir, safeName);
+    await writeFile(filePath, buffer);
+    storageUrl = `/uploads/${safeName}`;
+  }
   const video = await prisma.video.create({
     data: {
       matchId,
