@@ -47,11 +47,24 @@ DIRECT_URL="postgresql://USER:PASSWORD@localhost:5432/volley_stats"
 SUPABASE_URL="https://YOUR_PROJECT.supabase.co"
 SUPABASE_SERVICE_ROLE_KEY="YOUR_SERVICE_ROLE_KEY"
 SUPABASE_STORAGE_BUCKET="videos"
+NEXT_PUBLIC_SUPABASE_URL="https://YOUR_PROJECT.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="YOUR_ANON_KEY"
+NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET="videos"
 ```
 
 ## デプロイ想定
 - DB: PostgreSQL
 - ファイル保存: 本番はSupabase Storage（`SUPABASE_*`を設定）/ローカルは`public/uploads`。
+
+## Supabase Storage（ブラウザ直アップロード）
+動画のアップロードはブラウザからSupabase Storageへ直接送ります（Vercelの413回避）。\n
+- バケット `videos` を **Public** に設定\n
+- もしくは以下のポリシーで `anon` の insert を許可します\n
+```sql
+create policy \"allow anon uploads\" on storage.objects
+for insert to anon
+with check (bucket_id = 'videos');
+```
 - APIはRoute Handlersで実装。後段にAIワーカーを差し込む想定。
 
 ## タグ付けショートカット
@@ -61,6 +74,10 @@ SUPABASE_STORAGE_BUCKET="videos"
 - `1-9` = Outcome
 - `U` = Undo (直近イベント削除)
 - `Space` = Play/Pause
+
+## YouTube動画の利用
+- 動画アップロード時にYouTube URLを入力できます（ブラウザ再生）。\n
+- タグ付けはYouTube IFrame APIで現在時刻を取得します。\n
 
 ## 画面一覧
 - `/teams`
