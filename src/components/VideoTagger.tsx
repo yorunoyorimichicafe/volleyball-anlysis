@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { EventOutcome, EventType, Player } from "@prisma/client";
+import { parseYouTubeId } from "@/lib/youtube";
 
 const typeLabels: Record<EventType, string> = {
   SPIKE: "Spike",
@@ -68,6 +69,8 @@ export default function VideoTagger({
   initialEvents
 }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const ytPlayerRef = useRef<any>(null);
+  const ytContainerId = useRef(`yt-player-${Math.random().toString(36).slice(2)}`);
   const [events, setEvents] = useState<EventItem[]>(initialEvents);
   const [currentType, setCurrentType] = useState<EventType>("SPIKE");
   const [currentOutcome, setCurrentOutcome] = useState<EventOutcome>("POINT");
@@ -75,11 +78,37 @@ export default function VideoTagger({
   const [rotation, setRotation] = useState<string>("");
   const [zone, setZone] = useState<string>("");
   const [busy, setBusy] = useState(false);
+  const [ytReady, setYtReady] = useState(false);
 
   const playerOptions = useMemo(() => players, [players]);
+  const youtubeId = useMemo(() => parseYouTubeId(videoUrl.trim()), [videoUrl]);
+  const isYouTube = Boolean(youtubeId);
+
+  const getCurrentTime = useCallback(() => {
+    if (isYouTube && ytPlayerRef.current?.getCurrentTime) {
+      return ytPlayerRef.current.getCurrentTime();
+    }
+    return videoRef.current?.currentTime ?? 0;
+  }, [isYouTube]);
+
+  const togglePlay = useCallback(() => {
+    if (isYouTube && ytPlayerRef.current) {
+      const state = ytPlayerRef.current.getPlayerState?.();
+      if (state === 1) {
+        ytPlayerRef.current.pauseVideo();
+      } else {
+        ytPlayerRef.current.playVideo();
+      }
+      return;
+    }
+    if (videoRef.current?.paused) {
+      videoRef.current.play();
+    } else {
+      videoRef.current?.pause();
+    }
+  }, [isYouTube]);
 
   const createEvent = useCallback(async (overrideOutcome?: EventOutcome) => {
-    if (!videoRef.current) return;
     setBusy(true);
 
     const payload = {
@@ -91,7 +120,7 @@ export default function VideoTagger({
       playerId: playerId || null,
       rotation: rotation ? Number(rotation) : null,
       zone: zone ? Number(zone) : null,
-      videoTimeSec: Math.round(videoRef.current.currentTime)
+      videoTimeSec: Math.round(getCurrentTime())
     };
 
     const res = await fetch("/api/events", {
@@ -106,7 +135,7 @@ export default function VideoTagger({
     }
 
     setBusy(false);
-  }, [teamId, matchId, videoId, currentType, currentOutcome, playerId, rotation, zone]);
+  }, [teamId, matchId, videoId, currentType, currentOutcome, playerId, rotation, zone, getCurrentTime]);
 
   const deleteEvent = useCallback(async (eventId: string) => {
     await fetch(`/api/events/${eventId}`, { method: "DELETE" });
@@ -118,6 +147,37 @@ export default function VideoTagger({
     if (!last) return;
     deleteEvent(last.id);
   }, [events, deleteEvent]);
+
+  useEffect(() => {
+    if (!isYouTube || !youtubeId) return;
+
+    const onReady = () => {
+      ytPlayerRef.current = new (window as any).YT.Player(ytContainerId.current, {
+        videoId: youtubeId,
+        playerVars: { autoplay: 0, controls: 1 },
+        events: {
+          onReady: () => setYtReady(true)
+        }
+      });
+    };
+
+    if ((window as any).YT?.Player) {
+      onReady();
+      return;
+    }
+
+    const scriptId = "youtube-iframe-api";
+    if (!document.getElementById(scriptId)) {
+      const tag = document.createElement("script");
+      tag.id = scriptId;
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.body.appendChild(tag);
+    }
+
+    (window as any).onYouTubeIframeAPIReady = () => {
+      onReady();
+    };
+  }, [isYouTube, youtubeId]);
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
@@ -144,11 +204,7 @@ export default function VideoTagger({
       }
       if (key === " ") {
         event.preventDefault();
-        if (videoRef.current?.paused) {
-          videoRef.current.play();
-        } else {
-          videoRef.current?.pause();
-        }
+        togglePlay();
       }
 
       const outcome = keyMap[key];
@@ -159,13 +215,20 @@ export default function VideoTagger({
 
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [currentType, createEvent, undoLast]);
+  }, [currentType, createEvent, undoLast, togglePlay]);
 
   return (
     <div className="space-y-4">
       <div className="grid gap-4 lg:grid-cols-[2fr,1fr]">
         <div className="card">
-          <video ref={videoRef} src={videoUrl} controls className="w-full rounded-lg" />
+          {isYouTube ? (
+            <div>
+              <div id={ytContainerId.current} className="w-full aspect-video rounded-lg bg-black" />
+              {!ytReady && <p className="mt-2 text-xs text-slate-500">YouTubeプレイヤーを読み込み中...</p>}
+            </div>
+          ) : (
+            <video ref={videoRef} src={videoUrl} controls className="w-full rounded-lg" />
+          )}
           <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
             <span className="rounded-full bg-slate-100 px-2 py-1">S=Spike</span>
             <span className="rounded-full bg-slate-100 px-2 py-1">V=Serve</span>
